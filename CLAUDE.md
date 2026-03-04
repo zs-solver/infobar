@@ -21,7 +21,8 @@ python main.py
 - **info_bar.py**: 主窗口类 (InfoBar)，协调所有组件
 - **widgets.py**: EditableField 组件 - 默认只读的 QLineEdit，双击进入编辑模式
 - **storage.py**: Storage 类处理 JSON 配置持久化（列数据、窗口位置、主题）
-- **theme.py**: ThemeManager 将主题配置转换为支持 RGBA 的 CSS 样式表
+- **theme.py**: ThemeManager 将主题配置转换为支持 RGBA 的 CSS 样式表，背景透明度最小值限制为 0.01 防止鼠标穿透
+- **theme_dialog.py**: 主题设置对话框，提供颜色选择器和透明度滑块
 
 ## 配置系统
 
