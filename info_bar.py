@@ -27,10 +27,11 @@ class InfoBar(QWidget):
         font = QFont("Microsoft YaHei", 10)
 
         for col in self.config["columns"]:
-            field = EditableField(f"{col['name']}: {col['content']}")
+            field = EditableField(col)
             field.setFont(font)
             field.setStyleSheet(self.theme.get_stylesheet())
             field.contentChanged.connect(self.save_config)
+            field.contentChanged.connect(self.sync_heights)
             self.fields.append(field)
             self.splitter.addWidget(field)
 
@@ -42,13 +43,17 @@ class InfoBar(QWidget):
         win = self.config["window"]
         self.resize(win["width"], win["height"])
         self.move(win["x"], win["y"])
+        self.sync_heights()
+
+    def sync_heights(self):
+        """统一所有字段高度为最高字段的高度，避免透明穿透"""
+        max_height = max(field.get_content_height() for field in self.fields)
+        for field in self.fields:
+            field.setFixedHeight(max_height)
 
     def save_config(self):
         for i, field in enumerate(self.fields):
-            text = field.text()
-            if ": " in text:
-                name, content = text.split(": ", 1)
-                self.config["columns"][i] = {"name": name, "content": content}
+            self.config["columns"][i] = field.toPlainText()
 
         pos = self.pos()
         self.config["window"] = {

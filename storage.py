@@ -9,9 +9,10 @@ class Storage:
         self.config_file = config_file
         self.default_config = {
             "columns": [
-                {"name": "项目", "content": "for_cc"},
-                {"name": "状态", "content": "开发中"},
-                {"name": "分支", "content": "main"}
+                "A项目\nX功能",
+                "A项目\nY功能",
+                "B项目",
+                "C项目"
             ],
             "window": {"x": 100, "y": 50, "width": 800, "height": 35},
             "theme": {
