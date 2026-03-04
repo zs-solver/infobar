@@ -11,7 +11,8 @@ class ThemeManager:
 
     def get_stylesheet(self):
         """生成样式表"""
-        bg_rgba = self._hex_to_rgba(self.bg_color, self.bg_opacity)
+        bg_opacity = max(self.bg_opacity, 0.01)
+        bg_rgba = self._hex_to_rgba(self.bg_color, bg_opacity)
         text_rgba = self._hex_to_rgba(self.text_color, self.text_opacity)
         return f"padding: 5px; background: {bg_rgba}; color: {text_rgba}; border: none;"
 

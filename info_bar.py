@@ -2,12 +2,13 @@
 单行信息条工具 - 可调整列宽的置顶窗口
 """
 import sys
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QSplitter
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QSplitter, QMenu
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from widgets import EditableField
 from storage import Storage
 from theme import ThemeManager
+from theme_dialog import ThemeDialog
 
 class InfoBar(QWidget):
     def __init__(self):
@@ -20,7 +21,7 @@ class InfoBar(QWidget):
 
     def init_ui(self):
         self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.Tool)
-        self.setAttribute(Qt.WA_TranslucentBackground, False)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
 
         self.splitter = QSplitter(Qt.Horizontal)
         font = QFont("Microsoft YaHei", 10)
@@ -68,3 +69,21 @@ class InfoBar(QWidget):
     def mouseMoveEvent(self, event):
         if event.buttons() == Qt.LeftButton:
             self.move(event.globalPos() - self.drag_pos)
+
+    def contextMenuEvent(self, event):
+        menu = QMenu(self)
+        theme_action = menu.addAction("主题设置")
+        theme_action.triggered.connect(self.open_theme_dialog)
+        menu.exec_(event.globalPos())
+
+    def open_theme_dialog(self):
+        dialog = ThemeDialog(self.theme, self)
+        if dialog.exec_():
+            self.config["theme"] = dialog.get_theme_config()
+            self.apply_theme()
+            self.save_config()
+
+    def apply_theme(self):
+        stylesheet = self.theme.get_stylesheet()
+        for field in self.fields:
+            field.setStyleSheet(stylesheet)

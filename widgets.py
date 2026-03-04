@@ -14,6 +14,14 @@ class EditableField(QLineEdit):
         self.setCursor(Qt.ArrowCursor)
         self.textChanged.connect(lambda: self.contentChanged.emit(self.text()))
 
+    def contextMenuEvent(self, event):
+        if self.isReadOnly():
+            # 只读模式下，传递给父窗口
+            event.ignore()
+        else:
+            # 编辑模式下，显示默认菜单
+            super().contextMenuEvent(event)
+
     def mousePressEvent(self, event):
         if self.isReadOnly():
             event.ignore()
