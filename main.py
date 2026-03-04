@@ -7,6 +7,7 @@ from info_bar import InfoBar
 
 def main():
     app = QApplication(sys.argv)
+    app.setQuitOnLastWindowClosed(False)
     bar = InfoBar()
     bar.show()
     sys.exit(app.exec_())

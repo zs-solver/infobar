@@ -9,6 +9,7 @@ from widgets import EditableField
 from storage import Storage
 from theme import ThemeManager
 from theme_dialog import ThemeDialog
+from tray_manager import TrayManager
 
 class InfoBar(QWidget):
     def __init__(self):
@@ -18,6 +19,7 @@ class InfoBar(QWidget):
         self.theme = ThemeManager(self.config["theme"])
         self.fields = []
         self.init_ui()
+        self.tray = TrayManager(self)
 
     def init_ui(self):
         self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.Tool)
@@ -65,7 +67,8 @@ class InfoBar(QWidget):
 
     def closeEvent(self, event):
         self.save_config()
-        super().closeEvent(event)
+        self.hide()
+        event.ignore()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -79,6 +82,8 @@ class InfoBar(QWidget):
         menu = QMenu(self)
         theme_action = menu.addAction("主题设置")
         theme_action.triggered.connect(self.open_theme_dialog)
+        hide_action = menu.addAction("隐藏到托盘")
+        hide_action.triggered.connect(self.hide)
         menu.exec_(event.globalPos())
 
     def open_theme_dialog(self):
