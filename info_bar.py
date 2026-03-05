@@ -1,11 +1,10 @@
 """
 单行信息条工具 - 可调整列宽的置顶窗口
 """
-import sys
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QSplitter, QMenu
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
-from widgets import EditableField
+from widgets import EditableField, EdgeHandle
 from storage import Storage
 from theme import ThemeManager
 from theme_dialog import ThemeDialog
@@ -25,6 +24,9 @@ class InfoBar(QWidget):
         self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
 
+        self.left_handle = EdgeHandle('left', self)
+        self.right_handle = EdgeHandle('right', self)
+
         self.splitter = QSplitter(Qt.Horizontal)
         font = QFont("Microsoft YaHei", 10)
 
@@ -39,19 +41,25 @@ class InfoBar(QWidget):
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.left_handle)
         layout.addWidget(self.splitter)
+        layout.addWidget(self.right_handle)
         self.setLayout(layout)
 
         win = self.config["window"]
         self.resize(win["width"], win["height"])
         self.move(win["x"], win["y"])
         self.sync_heights()
+        self.apply_handle_theme()
 
     def sync_heights(self):
-        """统一所有字段高度为最高字段的高度，避免透明穿透"""
+        """统一所有字段和边缘手柄高度为最高字段的高度，避免透明穿透"""
         max_height = max(field.get_content_height() for field in self.fields)
         for field in self.fields:
             field.setFixedHeight(max_height)
+        self.left_handle.setFixedHeight(max_height)
+        self.right_handle.setFixedHeight(max_height)
 
     def save_config(self):
         for i, field in enumerate(self.fields):
@@ -97,3 +105,10 @@ class InfoBar(QWidget):
         stylesheet = self.theme.get_stylesheet()
         for field in self.fields:
             field.setStyleSheet(stylesheet)
+        self.apply_handle_theme()
+
+    def apply_handle_theme(self):
+        """将边缘手柄颜色设为与 QSplitter handle 一致的半透明背景色"""
+        handle_color = self.theme.get_handle_color()
+        self.left_handle.set_handle_color(handle_color)
+        self.right_handle.set_handle_color(handle_color)
