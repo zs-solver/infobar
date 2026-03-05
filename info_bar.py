@@ -31,7 +31,7 @@ class InfoBar(QWidget):
         font = QFont("Microsoft YaHei", 10)
 
         for col in self.config["columns"]:
-            field = EditableField(col)
+            field = EditableField(col, self)
             field.setFont(font)
             field.setStyleSheet(self.theme.get_stylesheet())
             field.contentChanged.connect(self.save_config)
@@ -112,3 +112,103 @@ class InfoBar(QWidget):
         handle_color = self.theme.get_handle_color()
         self.left_handle.set_handle_color(handle_color)
         self.right_handle.set_handle_color(handle_color)
+
+    def insert_field_at(self, target_field, position):
+        """在目标字段的左侧或右侧插入新格子"""
+        index = self.fields.index(target_field)
+        if position == 'right':
+            index += 1
+
+        # 创建新字段
+        new_field = EditableField("新格子", self)
+        new_field.setFont(target_field.font())
+        new_field.setStyleSheet(self.theme.get_stylesheet())
+        new_field.contentChanged.connect(self.save_config)
+        new_field.contentChanged.connect(self.sync_heights)
+
+        # 插入到列表和 splitter
+        self.fields.insert(index, new_field)
+        self.splitter.insertWidget(index, new_field)
+        self.config["columns"].insert(index, "新格子")
+
+        self.sync_heights()
+        self.save_config()
+
+    def delete_field(self, target_field):
+        """删除指定格子"""
+        if len(self.fields) <= 1:
+            return  # 至少保留一个格子
+
+        index = self.fields.index(target_field)
+        self.fields.pop(index)
+        self.config["columns"].pop(index)
+
+        # 从 splitter 中移除
+        target_field.setParent(None)
+        target_field.deleteLater()
+
+        self.sync_heights()
+        self.save_config()
+
+    def move_field(self, target_field, direction):
+        """移动格子位置"""
+        current_index = self.fields.index(target_field)
+        new_index = current_index
+
+        if direction == 'first':
+            new_index = 0
+        elif direction == 'last':
+            new_index = len(self.fields) - 1
+        elif direction == 'left':
+            new_index = max(0, current_index - 1)
+        elif direction == 'right':
+            new_index = min(len(self.fields) - 1, current_index + 1)
+
+        if new_index == current_index:
+            return  # 无需移动
+
+        # 移动字段
+        field = self.fields.pop(current_index)
+        self.fields.insert(new_index, field)
+
+        # 移动配置
+        col_data = self.config["columns"].pop(current_index)
+        self.config["columns"].insert(new_index, col_data)
+
+        # 重建 splitter（QSplitter 没有直接的移动方法）
+        self.rebuild_splitter()
+        self.save_config()
+
+    def reset_all_widths(self):
+        """重置所有格子为平均宽度"""
+        count = len(self.fields)
+        if count == 0:
+            return
+
+        total_width = self.splitter.width()
+        avg_width = total_width // count
+        sizes = [avg_width] * count
+        self.splitter.setSizes(sizes)
+        self.save_config()
+
+    def rebuild_splitter(self):
+        """重建 splitter 中的所有 widget（用于重新排序）"""
+        # 保存当前宽度比例
+        old_sizes = self.splitter.sizes()
+        old_total = sum(old_sizes) if old_sizes else 1
+
+        # 移除所有 widget
+        for field in self.fields:
+            self.splitter.widget(0).setParent(None)
+
+        # 按新顺序添加
+        for field in self.fields:
+            self.splitter.addWidget(field)
+
+        # 恢复宽度比例
+        if old_total > 0:
+            new_total = self.splitter.width()
+            new_sizes = [int(s / old_total * new_total) for s in old_sizes]
+            self.splitter.setSizes(new_sizes)
+
+        self.sync_heights()

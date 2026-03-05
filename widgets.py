@@ -9,8 +9,9 @@ class EditableField(QPlainTextEdit):
     """可编辑字段：支持多行文本，单击拖动，双击编辑"""
     contentChanged = pyqtSignal(str)
 
-    def __init__(self, text):
+    def __init__(self, text, info_bar=None):
         super().__init__(text)
+        self.info_bar = info_bar  # 保存 InfoBar 引用
         self.setReadOnly(True)
         self.setCursor(Qt.ArrowCursor)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -49,8 +50,67 @@ class EditableField(QPlainTextEdit):
 
     def contextMenuEvent(self, event):
         if self.isReadOnly():
-            # 只读模式下，传递给父窗口
-            event.ignore()
+            # 只读模式下，显示字段操作菜单
+            from PyQt5.QtWidgets import QMenu
+
+            if not self.info_bar:
+                event.ignore()
+                return
+
+            menu = QMenu(self)
+
+            # 编辑内容
+            edit_action = menu.addAction("编辑内容")
+            edit_action.triggered.connect(self.enter_edit_mode)
+
+            menu.addSeparator()
+
+            # 插入操作
+            insert_left_action = menu.addAction("在左侧插入新格子")
+            insert_left_action.triggered.connect(lambda: self.info_bar.insert_field_at(self, 'left'))
+
+            insert_right_action = menu.addAction("在右侧插入新格子")
+            insert_right_action.triggered.connect(lambda: self.info_bar.insert_field_at(self, 'right'))
+
+            # 删除操作
+            delete_action = menu.addAction("删除此格子")
+            delete_action.triggered.connect(lambda: self.info_bar.delete_field(self))
+            # 只有一个格子时不能删除
+            if len(self.info_bar.fields) <= 1:
+                delete_action.setEnabled(False)
+
+            menu.addSeparator()
+
+            # 移动操作子菜单
+            move_menu = menu.addMenu("移动")
+            move_first_action = move_menu.addAction("到最左")
+            move_first_action.triggered.connect(lambda: self.info_bar.move_field(self, 'first'))
+
+            move_left_action = move_menu.addAction("向左一位")
+            move_left_action.triggered.connect(lambda: self.info_bar.move_field(self, 'left'))
+
+            move_right_action = move_menu.addAction("向右一位")
+            move_right_action.triggered.connect(lambda: self.info_bar.move_field(self, 'right'))
+
+            move_last_action = move_menu.addAction("到最右")
+            move_last_action.triggered.connect(lambda: self.info_bar.move_field(self, 'last'))
+
+            menu.addSeparator()
+
+            # 重置宽度
+            reset_width_action = menu.addAction("重置所有宽度")
+            reset_width_action.triggered.connect(self.info_bar.reset_all_widths)
+
+            menu.addSeparator()
+
+            # 主题和托盘
+            theme_action = menu.addAction("主题设置")
+            theme_action.triggered.connect(self.info_bar.open_theme_dialog)
+
+            hide_action = menu.addAction("隐藏到托盘")
+            hide_action.triggered.connect(self.info_bar.hide)
+
+            menu.exec_(event.globalPos())
         else:
             # 编辑模式下，显示默认菜单
             super().contextMenuEvent(event)
@@ -77,6 +137,13 @@ class EditableField(QPlainTextEdit):
         self.setReadOnly(True)
         self.setCursor(Qt.ArrowCursor)
         super().focusOutEvent(event)
+
+    def enter_edit_mode(self):
+        """进入编辑模式"""
+        self.setReadOnly(False)
+        self.setCursor(Qt.IBeamCursor)
+        self.selectAll()
+        self.setFocus()
 
 
 class EdgeHandle(QWidget):
