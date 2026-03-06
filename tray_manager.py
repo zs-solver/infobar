@@ -37,6 +37,10 @@ class TrayManager:
         self.theme_action.setShortcut(QKeySequence("T"))
         self.theme_action.triggered.connect(self.parent.open_theme_dialog)
 
+        self.reset_pos_action = QAction("重置窗口位置(&P)", self.parent)
+        self.reset_pos_action.setShortcut(QKeySequence("P"))
+        self.reset_pos_action.triggered.connect(self.reset_position)
+
         self.restart_action = QAction("重启程序(&R)", self.parent)
         self.restart_action.setShortcut(QKeySequence("R"))
         self.restart_action.triggered.connect(self.restart_program)
@@ -47,6 +51,7 @@ class TrayManager:
 
         tray_menu.addAction(self.toggle_action)
         tray_menu.addAction(self.theme_action)
+        tray_menu.addAction(self.reset_pos_action)
         tray_menu.addSeparator()
         tray_menu.addAction(self.restart_action)
         tray_menu.addAction(self.quit_action)
@@ -72,6 +77,13 @@ class TrayManager:
         )
         self.parent.activateWindow()
         self.parent.raise_()
+
+    def reset_position(self):
+        """重置窗口到主屏幕左上角安全位置"""
+        screen = QApplication.primaryScreen().availableGeometry()
+        self.parent.move(screen.x() + 50, screen.y() + 50)
+        self.parent.save_config()
+        self.show_and_focus()
 
     def restart_program(self):
         self.parent.save_config()
