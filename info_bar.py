@@ -153,12 +153,12 @@ class InfoBar(QWidget):
         avg_width = sum(sizes) // len(sizes) if sizes else 100
 
         # 创建新字段
-        new_field = self._create_field("新格子")
+        new_field = self._create_field("")
 
         # 插入到列表和 splitter
         self.fields.insert(index, new_field)
         self.splitter.insertWidget(index, new_field)
-        self.config["columns"].insert(index, "新格子")
+        self.config["columns"].insert(index, "")
 
         # 窗口总宽度增大
         new_window_width = self.width() + avg_width
@@ -175,7 +175,7 @@ class InfoBar(QWidget):
         self.sync_heights()
         self.save_config()
 
-    def insert_at_edge(self, side, text="新格子", adjust_window=True):
+    def insert_at_edge(self, side, text="", adjust_window=True):
         """在边缘（最左或最右）插入新格子
 
         Args:
