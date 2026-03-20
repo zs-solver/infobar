@@ -102,17 +102,55 @@ class EditableField(QPlainTextEdit):
 
             # 移动操作子菜单
             move_menu = menu.addMenu("移动")
-            move_first_action = move_menu.addAction("到最左")
-            move_first_action.triggered.connect(lambda: self.info_bar.move_field(self, 'first'))
+            n = len(self.info_bar.fields)
+            c = self.info_bar.fields.index(self)
 
-            move_left_action = move_menu.addAction("向左一位")
-            move_left_action.triggered.connect(lambda: self.info_bar.move_field(self, 'left'))
+            def _circled(num):
+                return chr(0x2460 + num - 1) if 1 <= num <= 20 else f"({num})"
 
-            move_right_action = move_menu.addAction("向右一位")
-            move_right_action.triggered.connect(lambda: self.info_bar.move_field(self, 'right'))
+            if n <= 1:
+                move_menu.setEnabled(False)
+            else:
+                for k in range(n):
+                    if k == c:
+                        act = move_menu.addAction(f"── 当前位置 {_circled(c + 1)} ──")
+                        act.setEnabled(False)
+                        continue
 
-            move_last_action = move_menu.addAction("到最右")
-            move_last_action.triggered.connect(lambda: self.info_bar.move_field(self, 'last'))
+                    # 位置描述
+                    if k < c:
+                        if k == 0:
+                            desc = f"{_circled(1)} 之前"
+                        else:
+                            desc = f"{_circled(k)} 和 {_circled(k + 1)} 之间"
+                    else:  # k > c
+                        if k == n - 1:
+                            desc = f"{_circled(n)} 之后"
+                        else:
+                            desc = f"{_circled(k + 1)} 和 {_circled(k + 2)} 之间"
+
+                    # 附加标注
+                    tags = []
+                    if k == 0:
+                        tags.append("到最左")
+                    if k == n - 1:
+                        tags.append("到最右")
+                    if k == c - 1:
+                        tags.append("向左一位")
+                    if k == c + 1:
+                        tags.append("向右一位")
+                    if tags:
+                        desc += "（" + " · ".join(tags) + "）"
+
+                    act = move_menu.addAction(desc)
+                    act.triggered.connect(
+                        lambda checked, t=k: self.info_bar.move_field_to(self, t)
+                    )
+
+                # 悬浮移动子菜单时显示/隐藏位置序号
+                move_menu.aboutToShow.connect(self.info_bar.show_position_overlays)
+                move_menu.aboutToHide.connect(self.info_bar.hide_position_overlays)
+                menu.aboutToHide.connect(self.info_bar.hide_position_overlays)
 
             menu.addSeparator()
 

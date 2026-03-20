@@ -19,6 +19,7 @@ class InfoBar(QWidget):
         self.theme = ThemeManager(self.config["theme"])
         self.fields = []
         self._expanded_handle_count = 0  # 当前展开的手柄数量
+        self._position_overlays = []     # 移动操作时的位置标记覆盖层
         self._base_height = 0            # 文本区域基准高度
         self.init_ui()
         self.tray = TrayManager(self)
@@ -327,6 +328,77 @@ class InfoBar(QWidget):
         # 重建 splitter（QSplitter 没有直接的移动方法）
         self.rebuild_splitter()
         self.save_config()
+
+    def move_field_to(self, target_field, target_index):
+        """移动格子到指定位置（target_index 为目标索引，保留各格子原有宽度）"""
+        self.hide_position_overlays()
+        current_index = self.fields.index(target_field)
+        if target_index == current_index:
+            return
+
+        # 记录每个字段的宽度（按字段身份，而非位置顺序）
+        sizes = self.splitter.sizes()
+        field_sizes = {id(f): s for f, s in zip(self.fields, sizes)}
+
+        # 重排字段和配置
+        field = self.fields.pop(current_index)
+        self.fields.insert(target_index, field)
+
+        col_data = self.config["columns"].pop(current_index)
+        self.config["columns"].insert(target_index, col_data)
+
+        # 重建 splitter，按新顺序恢复各字段原有宽度
+        for _ in range(self.splitter.count()):
+            self.splitter.widget(0).setParent(None)
+        for f in self.fields:
+            self.splitter.addWidget(f)
+
+        new_sizes = [field_sizes[id(f)] for f in self.fields]
+        self.splitter.setSizes(new_sizes)
+
+        self.sync_heights()
+        self.save_config()
+
+    def show_position_overlays(self):
+        """在每个字段上显示带圆圈数字的位置标记（移动子菜单展开时调用）"""
+        self.hide_position_overlays()
+        from PyQt5.QtWidgets import QLabel
+        from PyQt5.QtGui import QFontMetrics
+
+        for i, field in enumerate(self.fields):
+            num = i + 1
+            text = chr(0x2460 + num - 1) if num <= 20 else f"({num})"
+
+            overlay = QLabel(text, field)
+            overlay.setAlignment(Qt.AlignCenter)
+            overlay.setFont(field.font())
+
+            # 根据字段字体计算徽标尺寸
+            fm = QFontMetrics(field.font())
+            size = fm.height() + 10
+            radius = size // 2
+            overlay.setFixedSize(size, size)
+            overlay.setStyleSheet(
+                "QLabel {"
+                "  background-color: rgba(0, 0, 0, 180);"
+                "  color: #FFD700;"
+                "  font-weight: bold;"
+                f"  border-radius: {radius}px;"
+                "  padding-bottom: 3px;"
+                "}"
+            )
+            # 居中显示在字段上
+            x = max(0, (field.width() - size) // 2)
+            y = max(0, (field.height() - size) // 2)
+            overlay.move(x, y)
+            overlay.show()
+            self._position_overlays.append(overlay)
+
+    def hide_position_overlays(self):
+        """移除所有位置标记覆盖层"""
+        for overlay in self._position_overlays:
+            overlay.deleteLater()
+        self._position_overlays.clear()
 
     def reset_all_widths(self):
         """重置所有格子为平均宽度"""
