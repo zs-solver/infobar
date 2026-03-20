@@ -23,6 +23,7 @@ python main.py
 - **storage.py**: Storage 类处理 JSON 配置持久化（列数据、窗口位置、主题）
 - **theme.py**: ThemeManager 将主题配置转换为支持 RGBA 的 CSS 样式表，背景透明度最小值限制为 0.01 防止鼠标穿透
 - **theme_dialog.py**: 主题设置对话框，提供颜色选择器和透明度滑块
+- **focus_monitor.py**: FocusMonitor 基于 WinEventHook 监控前台窗口切换，终端激活时显示 InfoBar，切走时隐藏
 
 ## 配置系统
 

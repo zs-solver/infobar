@@ -9,6 +9,7 @@ from storage import Storage
 from theme import ThemeManager
 from theme_dialog import ThemeDialog
 from tray_manager import TrayManager
+from focus_monitor import FocusMonitor
 
 class InfoBar(QWidget):
     def __init__(self):
@@ -21,6 +22,7 @@ class InfoBar(QWidget):
         self._base_height = 0            # 文本区域基准高度
         self.init_ui()
         self.tray = TrayManager(self)
+        self._init_focus_monitor()
 
     def init_ui(self):
         self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.Tool)
@@ -102,7 +104,28 @@ class InfoBar(QWidget):
         self.config["theme"] = self.theme.to_dict()
         self.storage.save(self.config)
 
+    def _init_focus_monitor(self):
+        """初始化前台窗口监控"""
+        self._focus_monitor = FocusMonitor(
+            own_hwnd_func=lambda: int(self.winId()),
+            parent=self,
+        )
+        self._focus_monitor.terminal_activated.connect(self._on_terminal_active)
+        self._focus_monitor.terminal_deactivated.connect(self._on_terminal_inactive)
+        self._focus_monitor.start()
+        # 启动时立即检查当前前台窗口
+        self._focus_monitor.check_now()
+
+    def _on_terminal_active(self):
+        """终端成为前台窗口时显示"""
+        self.show()
+
+    def _on_terminal_inactive(self):
+        """非终端成为前台窗口时隐藏"""
+        self.hide()
+
     def closeEvent(self, event):
+        self._focus_monitor.stop()
         self.save_config()
         self.hide()
         event.ignore()
