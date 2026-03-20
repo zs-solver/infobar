@@ -67,6 +67,12 @@ class EditableField(QPlainTextEdit):
 
             menu = QMenu(self)
 
+            # 隐藏到托盘
+            hide_action = menu.addAction("隐藏到托盘")
+            hide_action.triggered.connect(self.info_bar.hide)
+
+            menu.addSeparator()
+
             # 编辑内容
             edit_action = menu.addAction("编辑内容")
             edit_action.triggered.connect(self.enter_edit_mode)
@@ -116,12 +122,9 @@ class EditableField(QPlainTextEdit):
 
             menu.addSeparator()
 
-            # 主题和托盘
+            # 主题设置
             theme_action = menu.addAction("主题设置")
             theme_action.triggered.connect(self.info_bar.open_theme_dialog)
-
-            hide_action = menu.addAction("隐藏到托盘")
-            hide_action.triggered.connect(self.info_bar.hide)
 
             menu.exec_(event.globalPos())
         else:

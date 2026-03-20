@@ -117,10 +117,10 @@ class InfoBar(QWidget):
 
     def contextMenuEvent(self, event):
         menu = QMenu(self)
-        theme_action = menu.addAction("主题设置")
-        theme_action.triggered.connect(self.open_theme_dialog)
         hide_action = menu.addAction("隐藏到托盘")
         hide_action.triggered.connect(self.hide)
+        theme_action = menu.addAction("主题设置")
+        theme_action.triggered.connect(self.open_theme_dialog)
         menu.exec_(event.globalPos())
 
     def open_theme_dialog(self):
